@@ -6,6 +6,12 @@ services:
         ports:
             - "1025:1025"
             - "1080:1080"
+
+    rabbitmq:
+        image: rabbitmq:4-management
+        ports:
+            - "5672:5672"
+            - "15672:15672"
   ###> doctrine/doctrine-bundle ###
     # database:
     #     image: postgres:${POSTGRES_VERSION:-16}-alpine
