@@ -9,9 +9,9 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
+use App\Message\MailNotification;
 
 final class HomeController extends AbstractController
 {
@@ -19,7 +19,7 @@ final class HomeController extends AbstractController
     public function index(
         Request $request, 
         EntityManagerInterface $entityManager,
-        MailerInterface $mailer,
+        MessageBusInterface $messageBus,
         LoggerInterface $logger
         ): Response
     {
@@ -36,18 +36,10 @@ final class HomeController extends AbstractController
             $entityManager->flush();
 
             try {
-                $email = (new Email())
-                    ->from($incident->getUser()->getEmail())
-                    ->to('you@example.com')
-                    ->subject('New Incident #'.$incident->getId() . ' from ' . $incident->getUser()->getEmail())
-                    ->html('<h1>New Incident</h1><p>'.$incident->getDescription().'</p>');
-
+                
                 $logger->info('Tentative d\'envoi d\'email pour l\'incident #' . $incident->getId());
                 
-                // Supprimer le sleep qui peut causer des timeouts
-                sleep(10);
-            
-                $mailer->send($email);
+                $messageBus->dispatch(new MailNotification($incident->getUser()->getEmail(), $incident->getId(), $incident->getDescription()));
                 
                 $logger->info('Email envoyé avec succès pour l\'incident #' . $incident->getId());
                 $this->addFlash('success', 'Incident créé et email envoyé avec succès !');
